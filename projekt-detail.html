@@ -17,7 +17,7 @@
     <div id="footer-plugin"></div>
 
     <script src="js/main.js"></script>
-   <script>
+    <script>
     // Projektdatenbank emulieren
     const alleDetails = {
         1: {
@@ -67,45 +67,43 @@
     const container = document.getElementById('detail-content');
 
     if (!p) {
-        container.innerHTML = `<h2>Projekt nicht gefunden.</h2><p><a href="projekte.html">Zurück zur Übersicht</a></p>`;
+        container.innerHTML = '<h2>Projekt nicht gefunden.</h2><p><a href="projekte.html">Zurück zur Übersicht</a></p>';
     } else {
-        let bauvorgangHtml = p.bauvorgang.map(schritt => `<li>${schritt}</li>`).join('');
+        let bauvorgangHtml = p.bauvorgang.map(schritt => '<li>' + schritt + '</li>').join('');
         
         let kennzahlenHtml = '';
         if (Object.keys(p.kennzahlen).length > 0) {
             let cards = '';
             for (let [label, wert] of Object.entries(p.kennzahlen)) {
-                cards += `<div class="spec-card"><span class="spec-label">${label}</span><span class="spec-value">${wert}</span></div>`;
+                cards += '<div class="spec-card"><span class="spec-label">' + label + '</span><span class="spec-value">' + wert + '</span></div>';
             }
-            kennzahlenHtml = `<div class="detail-section"><h2>Kennzahlen & Eckdaten</h2><div class="specs-grid">${cards}</div></div>`;
+            kennzahlenHtml = '<div class="detail-section"><h2>Kennzahlen & Eckdaten</h2><div class="specs-grid">' + cards + '</div></div>';
         }
 
-        let techHtml = p.technologien.map(tech => `<span class="tag">${tech}</span>`).join('');
+        let techHtml = p.technologien.map(tech => '<span class="tag">' + tech + '</span>').join('');
 
         let pdfHtml = '';
         if (p.pdf_datei) {
             const hasAccess = sessionStorage.getItem('access_project_' + projektId) === 'true';
             
             if (!hasAccess) {
-                pdfHtml = `
-                    <div class="detail-section pin-section">
-                        <h2>Original-Dokumentation (PIN-geschützt)</h2>
-                        <p>Gib den PIN ein, um die vollständige PDF-Dokumentation einzusehen.</p>
-                        <div class="pin-form">
-                            <input type="password" id="user_pin" placeholder="PIN eingeben..." class="pin-input">
-                            <button onclick="checkProjectPin()" class="btn-card">Freischalten</button>
-                        </div>
-                        <p id="error-msg" class="error-msg" style="display:none;"></p>
-                    </div>`;
+                pdfHtml = '<div class="detail-section pin-section">' +
+                            '<h2>Original-Dokumentation (PIN-geschützt)</h2>' +
+                            '<p>Gib den PIN ein, um die vollständige PDF-Dokumentation einzusehen.</p>' +
+                            '<div class="pin-form">' +
+                                '<input type="password" id="user_pin" placeholder="PIN eingeben..." class="pin-input">' +
+                                '<button onclick="checkProjectPin()" class="btn-card">Freischalten</button>' +
+                            '</div>' +
+                            '<p id="error-msg" class="error-msg" style="display:none;"></p>' +
+                          '</div>';
             } else {
-                pdfHtml = `
-                    <div class="detail-section pin-section">
-                        <h2>Original-Dokumentation (PIN-geschützt)</h2>
-                        <div class="success-box" style="margin-top: 1rem;">
-                            <p style="color: #10b981; font-weight: 600; margin-bottom: 1rem;">✔ Zugriff erfolgreich!</p>
-                            <a href="${p.pdf_datei}" target="_blank" class="btn">Vollständige PDF-Dokumentation öffnen</a>
-                        </div>
-                    </div>`;
+                pdfHtml = '<div class="detail-section pin-section">' +
+                            '<h2>Original-Dokumentation (PIN-geschützt)</h2>' +
+                            '<div class="success-box" style="margin-top: 1rem;">' +
+                                '<p style="color: #10b981; font-weight: 600; margin-bottom: 1rem;">✔ Zugriff erfolgreich!</p>' +
+                                '<a href="' + p.pdf_datei + '" target="_blank" class="btn">Vollständige PDF-Dokumentation öffnen</a>' +
+                            '</div>' +
+                          '</div>';
             }
         }
 
