@@ -1,0 +1,143 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Projektdetails</title>
+    <link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+
+    <div id="header-plugin"></div>
+
+    <main class="container" id="detail-content">
+        <!-- Wird automatisch per JavaScript befüllt -->
+    </main>
+
+    <div id="footer-plugin"></div>
+
+    <script src="js/main.js"></script>
+    <script>
+        // Projektdatenbank emulieren
+        const alleDetails = {
+            1: {
+                titel: "Mausefallen-Trebuchet",
+                untertitel: "Entwicklung, Bau und physikalische Analyse eines Mausefallen-Katapults von Marlon Janthur & Francesco Fullone",
+                beschreibung: "Ziel des Projekts war die Konstruktion eines leistungsstarken Wurfgerätes aus einer einfachen Mausefalle als Energiequelle. Dabei stand im Vordergrund, wie sich mit einer relativ geringen Energiemenge möglichst schnell eine kräftige und kontrollierte Bewegung erzeugen lässt – inspiriert von historischen Wurfmaschinen wie dem Trebuchet.",
+                bauvorgang: [
+                    "Grundkonstruktion aus recycelten Materialien (Vinylboden als Base, Stützen aus einer alten Palette).",
+                    "Verwendung eines Pinselstiels als optimierter Wurfarm.",
+                    "Regulierung der Reibung an der Achse über individuell einstellbare Muttern.",
+                    "Schrittweise Optimierung: Verkürzung des Lastarms, Anpassung des Zugwinkels und Einbau eines Stoppers für den perfekten Abschusswinkel von rund 45°.",
+                    "Visuelle Veredelung durch Lackierung im SGE-Design."
+                ],
+                technologien: ["Physik", "Mechanik", "Handwerk", "CAD/Berechnung"],
+                kennzahlen: {
+                    "Schussweite": "11 bis 12 Meter",
+                    "Anfangsgeschwindigkeit": "ca. 10,9 m/s",
+                    "Maximale Flughöhe": "ca. 3 Meter",
+                    "Federkraft": "ca. 2,5 Newton"
+                },
+                pdf_datei: "documents/katapult-dokumentation.pdf"
+            },
+            2: {
+                titel: "Bewerbungs-Portfolio (Diese Website)",
+                untertitel: "Modulare Webanwendung zur professionellen Selbstpräsentation",
+                beschreibung: "Dieses Portfolio wurde von Grund auf selbst entwickelt, um technisches Know-how in der Webentwicklung direkt praktisch unter Beweis zu stellen. Es verzichtet bewusst auf schwere Frameworks, um sauberes, performantes Handwerk zu zeigen.",
+                bauvorgang: [
+                    "Entwurf eines sauberen, seriositätsorientierten UI/UX-Designs mit CSS-Variablen.",
+                    "Umsetzung einer modularen Architektur via JavaScript-Komponenten.",
+                    "Dynamische Projektübergabe mittels URL-Parametern zur leichten Skalierbarkeit.",
+                    "Vollständig responsive Gestaltung für Desktop und mobile Endgeräte."
+                ],
+                technologien: ["HTML5", "CSS3", "JavaScript", "Modular Design"],
+                kennzahlen: {
+                    "Architektur": "Modular (JS Fetch/Inject)",
+                    "Design": "Custom CSS / Clean Business",
+                    "Status": "Produktiv & erweiterbar"
+                },
+                pdf_datei: ""
+            }
+        };
+
+        const urlParams = new URLSearchParams(window.location.search);
+        const projektId = parseInt(urlParams.get('id')) || 1;
+        const p = alleDetails[projektId];
+
+        const container = document.getElementById('detail-content');
+
+        if (!p) {
+            container.innerHTML = `<h2>Projekt nicht gefunden.</h2><p><a href="projekte.html">Zurück zur Übersicht</a></p>`;
+        } else {
+            let bauvorgangHtml = p.bauvorgang.map(schritt => `<li>${schritt}</li>`).join('');
+            
+            let kennzahlenHtml = '';
+            if (Object.keys(p.kennzahlen).length > 0) {
+                let cards = '';
+                for (let [label, wert] of Object.entries(p.kennzahlen)) {
+                    cards += `<div class="spec-card"><span class="spec-label">${label}</span><span class="spec-value">${wert}</span></div>`;
+                }
+                kennzahlenHtml = `<div class="detail-section"><h2>Kennzahlen & Eckdaten</h2><div class="specs-grid">${cards}</div></div>`;
+            }
+
+            let techHtml = p.technologien.map(tech => `<span class="tag">${tech}</span>`).join('');
+
+            let pdfHtml = '';
+            if (p.pdf_datei) {
+                const hasAccess = sessionStorage.getItem('access_project_' + projektId) === 'true';
+                pdfHtml = `
+                    <div class="detail-section pin-section">
+                        <h2>Original-Dokumentation (PIN-geschützt)</h2>
+                        <p>Gib den PIN ein, um die vollständige PDF-Dokumentation einzusehen.</p>
+                        ${!hasAccess ? `
+                            <div class="pin-form">
+                                <input type="password" id="user_pin" placeholder="PIN eingeben..." class="pin-input">
+                                <button onclick="checkProjectPin(projektId, '{p.pdf_datei}')" class="btn-card">Freischalten</button>
+                            </div>
+                            <p id="error-msg" class="error-msg" style="display:none;"></p>
+                        ` : `
+                            <div class="success-box" style="margin-top: 1rem;">
+                                <p style="color: #10b981; font-weight: 600; margin-bottom: 1rem;">✔ Zugriff erfolgreich!</p>
+                                <a href="\${p.pdf_datei}" target="_blank" class="btn">Vollständige PDF-Dokumentation öffnen</a>
+                            </div>
+                        `}
+                    </div>`;
+            }
+
+            container.innerHTML = `
+                <a href="projekte.html" class="back-link">&larr; Zurück zur Übersicht</a>
+                <div class="page-header" style="margin-top: 1.5rem;">
+                    <h1>${p.titel}</h1>
+                    <p class="subtitle">${p.untertitel}</p>
+                </div>
+                <div class="detail-section">
+                    <h2>Projektbeschreibung</h2>
+                    <p>${p.beschreibung}</p>
+                </div>
+                <div class="detail-section">
+                    <h2>Umsetzung & Ablauf</h2>
+                    <ul class="detail-list">${bauvorgangHtml}</ul>
+                </div>
+                ${kennzahlenHtml}
+                <div class="detail-section">
+                    <h2>Verwendete Technologien</h2>
+                    <div class="tech-tags">${techHtml}</div>
+                </div>
+                ${pdfHtml}
+            `;
+        }
+
+        function checkProjectPin(id, fileUrl) {
+            const pin = document.getElementById('user_pin').value;
+            if (pin === "2026") {
+                sessionStorage.setItem('access_project_' + id, 'true');
+                window.location.reload();
+            } else {
+                const errMsg = document.getElementById('error-msg');
+                errMsg.innerText = "Falscher PIN.";
+                errMsg.style.display = "block";
+            }
+        }
+    </script>
+</body>
+</html>
