@@ -17,7 +17,7 @@
     <div id="footer-plugin"></div>
 
     <script src="js/main.js"></script>
-    <script>
+   <script>
     // Projektdatenbank emulieren
     const alleDetails = {
         1: {
@@ -43,7 +43,7 @@
         2: {
             titel: "Bewerbungs-Portfolio (Diese Website)",
             untertitel: "Modulare Webanwendung zur professionellen Selbstpräsentation",
-            beschreibung: "Dieses Portfolio wurde von Grund auf selbst entwickelt, um technisches Know-how in der Webentwicklung direkt praktisch unter Beweis zu stellen. Es verzichtet bewusst auf schwere Frameworks, um sauberes, performantes Handwerk zu zeigen.",
+            beschreibung: "Dieses Portfolio wurde von Grund auf selbst entwickelt, um technisches Know-how in der Webentwicklung direkt praktisch unter Beweis to stellen. Es verzichtet bewusst auf schwere Frameworks, um sauberes, performantes Handwerk zu zeigen.",
             bauvorgang: [
                 "Entwurf eines sauberen, seriositätsorientierten UI/UX-Designs mit CSS-Variablen.",
                 "Umsetzung einer modularen Architektur via JavaScript-Komponenten.",
@@ -85,23 +85,28 @@
         let pdfHtml = '';
         if (p.pdf_datei) {
             const hasAccess = sessionStorage.getItem('access_project_' + projektId) === 'true';
-            pdfHtml = `
-                <div class="detail-section pin-section">
-                    <h2>Original-Dokumentation (PIN-geschützt)</h2>
-                    <p>Gib den PIN ein, um die vollständige PDF-Dokumentation einzusehen.</p>
-                    ${!hasAccess ? `
+            
+            if (!hasAccess) {
+                pdfHtml = `
+                    <div class="detail-section pin-section">
+                        <h2>Original-Dokumentation (PIN-geschützt)</h2>
+                        <p>Gib den PIN ein, um die vollständige PDF-Dokumentation einzusehen.</p>
                         <div class="pin-form">
                             <input type="password" id="user_pin" placeholder="PIN eingeben..." class="pin-input">
                             <button onclick="checkProjectPin()" class="btn-card">Freischalten</button>
                         </div>
                         <p id="error-msg" class="error-msg" style="display:none;"></p>
-                    ` : `
+                    </div>`;
+            } else {
+                pdfHtml = `
+                    <div class="detail-section pin-section">
+                        <h2>Original-Dokumentation (PIN-geschützt)</h2>
                         <div class="success-box" style="margin-top: 1rem;">
                             <p style="color: #10b981; font-weight: 600; margin-bottom: 1rem;">✔ Zugriff erfolgreich!</p>
-                            <a href="\${p.pdf_datei}" target="_blank" class="btn">Vollständige PDF-Dokumentation öffnen</a>
+                            <a href="${p.pdf_datei}" target="_blank" class="btn">Vollständige PDF-Dokumentation öffnen</a>
                         </div>
-                    `}
-                </div>`;
+                    </div>`;
+            }
         }
 
         container.innerHTML = `
