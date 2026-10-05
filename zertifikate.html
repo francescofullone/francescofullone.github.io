@@ -1,0 +1,97 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Zertifikate & Engagement</title>
+    <link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+
+    <div id="header-plugin"></div>
+
+    <main class="container">
+        <div class="page-header">
+            <h1>Zertifikate & Engagement</h1>
+            <p>Nachweise über Weiterbildungen, Qualifikationen und gesellschaftliches Engagement.</p>
+        </div>
+
+        <div class="certs-container">
+            <div class="cert-card">
+                <div class="cert-header">
+                    <div>
+                        <h2>Zertifikat: Silversurfer-Tandempartner</h2>
+                        <p class="cert-issuer">Lichtenberg-Oberstufengymnasium & Bürgerhilfe Bruchköbel e.V. • <strong>Schuljahr 2025/26</strong></p>
+                    </div>
+                </div>
+                
+                <p class="cert-desc">Ehrenamtliche Unterstützung von Senioren im Umgang mit moderner Digitaltechnik.</p>
+
+                <div class="cert-content-box">
+                    <h4>Vermittelte / Angewandte Inhalte:</h4>
+                    <ul class="cert-list">
+                        <li>Umgang mit dem eigenen Smartphone</li>
+                        <li>Einrichten von WLAN-Zugängen</li>
+                        <li>Dateiverwaltung & E-Mail-Verkehr</li>
+                        <li>Soziale Medien und Fotofunktion</li>
+                        <li>Beratung bei Neuanschaffungen</li>
+                        <li>Sicherheit im Internet & Phishing-Prävention</li>
+                    </ul>
+                </div>
+
+                <p class="cert-signatures">Ausgestellt von: Angela Kirchhoff (Schulleiterin LOG) & Uwe Schohaus (Bürgerhilfe Bruchköbel e.V.)</p>
+
+                <div class="pin-section" style="margin-top: 2rem; border-top: 1px solid var(--border-color); padding-top: 1.5rem;">
+                    <h4>Original-Zertifikat einsehen</h4>
+                    
+                    <div id="cert-pin-area">
+                        <!-- Wird per JS gesteuert -->
+                    </div>
+                </div>
+            </div>
+        </div>
+    </main>
+
+    <div id="footer-plugin"></div>
+
+    <script src="js/main.js"></script>
+    <script>
+        function renderCertArea() {
+            const certGranted = sessionStorage.getItem('access_cert') === 'true';
+            const area = document.getElementById('cert-pin-area');
+            
+            if (!certGranted) {
+                area.innerHTML = `
+                    <p>Gib den PIN ein, um das vollständige Original-Zertifikat einzusehen.</p>
+                    <div class="pin-form" style="margin-top: 1rem;">
+                        <input type="password" id="user_pin_cert" placeholder="PIN eingeben..." class="pin-input">
+                        <button onclick="checkCertPin()" class="btn-card">Freischalten</button>
+                    </div>
+                    <p id="cert-error" class="error-msg" style="display:none;"></p>
+                `;
+            } else {
+                area.innerHTML = `
+                    <div class="success-box" style="margin-top: 1rem;">
+                        <p style="color: #10b981; font-weight: 600; margin-bottom: 1rem;">✔ Zugriff freigegeben</p>
+                        <a href="documents/1000026908.jpg" target="_blank" class="btn">Original-Zertifikat (JPG) öffnen</a>
+                    </div>
+                `;
+            }
+        }
+
+        function checkCertPin() {
+            const pin = document.getElementById('user_pin_cert').value;
+            if (pin === "2026") {
+                sessionStorage.setItem('access_cert', 'true');
+                renderCertArea();
+            } else {
+                const err = document.getElementById('cert-error');
+                err.innerText = "Falscher PIN.";
+                err.style.display = "block";
+            }
+        }
+
+        renderCertArea();
+    </script>
+</body>
+</html>
