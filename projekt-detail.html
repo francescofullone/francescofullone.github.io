@@ -92,7 +92,7 @@
                     ${!hasAccess ? `
                         <div class="pin-form">
                             <input type="password" id="user_pin" placeholder="PIN eingeben..." class="pin-input">
-                            <button onclick="checkProjectPin(projektId)" class="btn-card">Freischalten</button>
+                            <button onclick="checkProjectPin()" class="btn-card">Freischalten</button>
                         </div>
                         <p id="error-msg" class="error-msg" style="display:none;"></p>
                     ` : `
@@ -127,10 +127,13 @@
         `;
     }
 
-    function checkProjectPin(id) {
+    function checkProjectPin() {
+        const currentParams = new URLSearchParams(window.location.search);
+        const currentId = parseInt(currentParams.get('id')) || 1;
         const pin = document.getElementById('user_pin').value;
+        
         if (pin === "2026") {
-            sessionStorage.setItem('access_project_' + id, 'true');
+            sessionStorage.setItem('access_project_' + currentId, 'true');
             window.location.reload();
         } else {
             const errMsg = document.getElementById('error-msg');
