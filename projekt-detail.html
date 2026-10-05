@@ -59,85 +59,81 @@
                 pdf_datei: ""
             }
         };
+    const urlParams = new URLSearchParams(window.location.search);
+    const projektId = parseInt(urlParams.get('id')) || 1;
+    const p = alleDetails[projektId];
+    const container = document.getElementById('detail-content');
 
-        const urlParams = new URLSearchParams(window.location.search);
-        const projektId = parseInt(urlParams.get('id')) || 1;
-        const p = alleDetails[projektId];
+    if (!p) {
+        container.innerHTML = `<h2>Projekt nicht gefunden.</h2><p><a href="projekte.html">Zurück zur Übersicht</a></p>`;
+    } else {
+        let bauvorgangHtml = p.bauvorgang.map(schritt => `<li>${schritt}</li>`).join('');
+        
+        let kennzahlenHtml = '';
+        if (Object.keys(p.kennzahlen).length > 0) {
+            let cards = '';
+            for (let [label, wert] of Object.entries(p.kennzahlen)) {
+                cards += `<div class="spec-card"><span class="spec-label">${label}</span><span class="spec-value">${wert}</span></div>`;
+            }
+            kennzahlenHtml = `<div class="detail-section"><h2>Kennzahlen & Eckdaten</h2><div class="specs-grid">${cards}</div></div>`;
+        }
 
-        const container = document.getElementById('detail-content');
+        let techHtml = p.technologien.map(tech => `<span class="tag">${tech}</span>`).join('');
 
-        if (!p) {
-            container.innerHTML = `<h2>Projekt nicht gefunden.</h2><p><a href="projekte.html">Zurück zur Übersicht</a></p>`;
+        let pdfHtml = '';
+        if (p.pdf_datei) {
+            const hasAccess = sessionStorage.getItem('access_project_' + projektId) === 'true';
+            pdfHtml = `
+                <div class="detail-section pin-section">
+                    <h2>Original-Dokumentation (PIN-geschützt)</h2>
+                    <p>Gib den PIN ein, um die vollständige PDF-Dokumentation einzusehen.</p>
+                    ${!hasAccess ? `
+                        <div class="pin-form">
+                            <input type="password" id="user_pin" placeholder="PIN eingeben..." class="pin-input">
+                            <button onclick="checkProjectPin(\${projektId})" class="btn-card">Freischalten</button>
+                        </div>
+                        <p id="error-msg" class="error-msg" style="display:none;"></p>
+                    ` : `
+                        <div class="success-box" style="margin-top: 1rem;">
+                            <p style="color: #10b981; font-weight: 600; margin-bottom: 1rem;">✔ Zugriff erfolgreich!</p>
+                            <a href="\${p.pdf_datei}" target="_blank" class="btn">Vollständige PDF-Dokumentation öffnen</a>
+                        </div>
+                    `}
+                </div>`;
+        }
+
+        container.innerHTML = `
+            <a href="projekte.html" class="back-link">&larr; Zurück zur Übersicht</a>
+            <div class="page-header" style="margin-top: 1.5rem;">
+                <h1>${p.titel}</h1>
+                <p class="subtitle">${p.untertitel}</p>
+            </div>
+            <div class="detail-section">
+                <h2>Projektbeschreibung</h2>
+                <p>${p.beschreibung}</p>
+            </div>
+            <div class="detail-section">
+                <h2>Umsetzung & Ablauf</h2>
+                <ul class="detail-list">${bauvorgangHtml}</ul>
+            </div>
+            ${kennzahlenHtml}
+            <div class="detail-section">
+                <h2>Verwendete Technologien</h2>
+                <div class="tech-tags">${techHtml}</div>
+            </div>
+            ${pdfHtml}
+        `;
+    }
+
+    function checkProjectPin(id) {
+        const pin = document.getElementById('user_pin').value;
+        if (pin === "2026") {
+            sessionStorage.setItem('access_project_' + id, 'true');
+            window.location.reload();
         } else {
-            let bauvorgangHtml = p.bauvorgang.map(schritt => `<li>${schritt}</li>`).join('');
-            
-            let kennzahlenHtml = '';
-            if (Object.keys(p.kennzahlen).length > 0) {
-                let cards = '';
-                for (let [label, wert] of Object.entries(p.kennzahlen)) {
-                    cards += `<div class="spec-card"><span class="spec-label">${label}</span><span class="spec-value">${wert}</span></div>`;
-                }
-                kennzahlenHtml = `<div class="detail-section"><h2>Kennzahlen & Eckdaten</h2><div class="specs-grid">${cards}</div></div>`;
-            }
-
-            let techHtml = p.technologien.map(tech => `<span class="tag">${tech}</span>`).join('');
-
-            let pdfHtml = '';
-            if (p.pdf_datei) {
-                const hasAccess = sessionStorage.getItem('access_project_' + projektId) === 'true';
-                pdfHtml = `
-                    <div class="detail-section pin-section">
-                        <h2>Original-Dokumentation (PIN-geschützt)</h2>
-                        <p>Gib den PIN ein, um die vollständige PDF-Dokumentation einzusehen.</p>
-                        ${!hasAccess ? `
-                            <div class="pin-form">
-                                <input type="password" id="user_pin" placeholder="PIN eingeben..." class="pin-input">
-                                <button onclick="checkProjectPin(projektId, '{p.pdf_datei}')" class="btn-card">Freischalten</button>
-                            </div>
-                            <p id="error-msg" class="error-msg" style="display:none;"></p>
-                        ` : `
-                            <div class="success-box" style="margin-top: 1rem;">
-                                <p style="color: #10b981; font-weight: 600; margin-bottom: 1rem;">✔ Zugriff erfolgreich!</p>
-                                <a href="\${p.pdf_datei}" target="_blank" class="btn">Vollständige PDF-Dokumentation öffnen</a>
-                            </div>
-                        `}
-                    </div>`;
-            }
-
-            container.innerHTML = `
-                <a href="projekte.html" class="back-link">&larr; Zurück zur Übersicht</a>
-                <div class="page-header" style="margin-top: 1.5rem;">
-                    <h1>${p.titel}</h1>
-                    <p class="subtitle">${p.untertitel}</p>
-                </div>
-                <div class="detail-section">
-                    <h2>Projektbeschreibung</h2>
-                    <p>${p.beschreibung}</p>
-                </div>
-                <div class="detail-section">
-                    <h2>Umsetzung & Ablauf</h2>
-                    <ul class="detail-list">${bauvorgangHtml}</ul>
-                </div>
-                ${kennzahlenHtml}
-                <div class="detail-section">
-                    <h2>Verwendete Technologien</h2>
-                    <div class="tech-tags">${techHtml}</div>
-                </div>
-                ${pdfHtml}
-            `;
+            const errMsg = document.getElementById('error-msg');
+            errMsg.innerText = "Falscher PIN.";
+            errMsg.style.display = "block";
         }
-
-        function checkProjectPin(id, fileUrl) {
-            const pin = document.getElementById('user_pin').value;
-            if (pin === "2026") {
-                sessionStorage.setItem('access_project_' + id, 'true');
-                window.location.reload();
-            } else {
-                const errMsg = document.getElementById('error-msg');
-                errMsg.innerText = "Falscher PIN.";
-                errMsg.style.display = "block";
-            }
-        }
-    </script>
-</body>
-</html>
+    }
+</script>
