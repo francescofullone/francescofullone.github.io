@@ -1,0 +1,367 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Pro-Web PDF Editor - Portfolio</title>
+    <link rel="stylesheet" href="css/style.css">
+    <!-- Externe Bibliotheken für professionelle PDF-Bearbeitung im Browser -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
+    <script src="https://unpkg.com/pdf-lib@1.17.1/dist/pdf-lib.min.js"></script>
+    <style>
+        .editor-layout {
+            display: grid;
+            grid-template-columns: 280px 1fr;
+            gap: 1.5rem;
+            margin-top: 2rem;
+            align-items: start;
+        }
+        @media (max-width: 768px) {
+            .editor-layout { grid-template-columns: 1fr; }
+        }
+        .tool-panel {
+            background: var(--card-bg);
+            border: 1px solid var(--border-color);
+            border-radius: 8px;
+            padding: 1.5rem;
+            box-shadow: 0 1px 3px rgba(0, 0, 0, 0.04);
+        }
+        .tool-panel h3 {
+            font-size: 1.1rem;
+            margin-bottom: 1rem;
+            color: var(--text-main);
+        }
+        .tool-group {
+            margin-bottom: 1.5rem;
+        }
+        .tool-group label {
+            display: block;
+            font-size: 0.85rem;
+            color: var(--text-muted);
+            margin-bottom: 0.5rem;
+        }
+        .tool-btn {
+            width: 100%;
+            background: var(--bg-color);
+            color: var(--text-main);
+            border: 1px solid var(--border-color);
+            padding: 0.6rem 1rem;
+            border-radius: 6px;
+            text-align: left;
+            font-size: 0.9rem;
+            cursor: pointer;
+            margin-bottom: 0.5rem;
+            transition: all 0.2s ease;
+        }
+        .tool-btn:hover, .tool-btn.active {
+            background: var(--accent);
+            color: white;
+            border-color: var(--accent);
+        }
+        .workspace {
+            background: #0f172a;
+            border-radius: 8px;
+            padding: 2rem;
+            min-height: 600px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            position: relative;
+            overflow: auto;
+        }
+        #pdf-canvas-container {
+            position: relative;
+            box-shadow: 0 10px 25px rgba(0,0,0,0.5);
+            background: white;
+        }
+        canvas {
+            display: block;
+        }
+        .upload-screen {
+            text-align: center;
+            color: white;
+        }
+        .upload-screen input[type="file"] {
+            display: none;
+        }
+        .upload-label {
+            display: inline-block;
+            background: var(--accent);
+            color: white;
+            padding: 0.75rem 1.75rem;
+            border-radius: 6px;
+            cursor: pointer;
+            font-weight: 500;
+            margin-top: 1rem;
+            transition: background 0.2s;
+        }
+        .upload-label:hover {
+            background: var(--accent-hover);
+        }
+        .action-bar {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-top: 1rem;
+            background: var(--card-bg);
+            padding: 1rem;
+            border-radius: 8px;
+            border: 1px solid var(--border-color);
+        }
+        .page-nav {
+            display: flex;
+            gap: 10px;
+            align-items: center;
+            color: var(--text-main);
+            font-size: 0.95rem;
+        }
+    </style>
+</head>
+<body>
+
+    <div id="header-plugin"></div>
+
+    <main class="container">
+        <div class="page-header">
+            <h1>Pro-Web PDF Editor</h1>
+            <p>Dokumente direkt im Browser anzeigen, mit Text versehen, markieren und herunterladen.</p>
+        </div>
+
+        <div id="upload-view" class="workspace">
+            <div class="upload-screen">
+                <h2>Kein PDF geladen</h2>
+                <p>Wähle eine PDF-Datei von deinem Gerät, um sie professionell zu bearbeiten.</p>
+                <label class="upload-label">
+                    PDF-Datei auswählen
+                    <input type="file" id="pdf-file-input" accept="application/pdf">
+                </label>
+            </div>
+        </div>
+
+        <div id="editor-view" style="display: none;">
+            <div class="action-bar">
+                <div class="page-nav">
+                    <button class="tool-btn" style="width: auto; margin:0;" id="prev-page">&larr; Vorherige</button>
+                    <span>Seite <span id="page-num">1</span> von <span id="page-count">1</span></span>
+                    <button class="tool-btn" style="width: auto; margin:0;" id="next-page">Nächste &rarr;</button>
+                </div>
+                <button class="btn" id="save-pdf-btn">PDF herunterladen</button>
+            </div>
+
+            <div class="editor-layout">
+                <div class="tool-panel">
+                    <h3>Werkzeuge</h3>
+                    <div class="tool-group">
+                        <label>Modus wählen:</label>
+                        <button class="tool-btn active" data-tool="text">✍️ Text hinzufügen</button>
+                        <button class="tool-btn" data-tool="highlight">🖍️ Markierungs-Rechteck</button>
+                    </div>
+                    <div class="tool-group" id="text-options">
+                        <label>Text-Inhalt:</label>
+                        <input type="text" id="custom-text-input" class="pin-input" style="width:100%; margin-bottom: 0.5rem;" value="Geprüft & Freigegeben">
+                        <label>Schriftgröße:</label>
+                        <input type="number" id="font-size-input" class="pin-input" style="width:100%;" value="16">
+                    </div>
+                    <div class="tool-group" style="margin-top: 2rem;">
+                        <label>Datei wechseln:</label>
+                        <label class="upload-label" style="display:block; text-align:center; padding: 0.5rem; font-size: 0.9rem;">
+                            Neue PDF öffnen
+                            <input type="file" id="pdf-file-input-replace" accept="application/pdf">
+                        </label>
+                    </div>
+                </div>
+
+                <div class="workspace" style="min-height: 500px;">
+                    <div id="pdf-canvas-container">
+                        <canvas id="pdf-canvas"></canvas>
+                    </div>
+                    <p style="color: #94a3b8; font-size: 0.85rem; margin-top: 1rem;">Tipp: Klicke auf die Dokumentenfläche, um das gewählte Element zu platzieren.</p>
+                </div>
+            </div>
+        </div>
+    </main>
+
+    <div id="footer-plugin"></div>
+
+    <script src="js/main.js"></script>
+    <script>
+        // PDF.js Worker konfigurieren
+        pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js';
+
+        let pdfDoc = null;
+        let pageNum = 1;
+        let pageRendering = false;
+        let pageNumPending = null;
+        let scale = 1.2;
+        let canvas = document.getElementById('pdf-canvas');
+        let ctx = canvas.getContext('2d');
+        let currentFileArrayBuffer = null;
+        let userActions = {}; // Speichert Änderungen pro Seite
+
+        // Datei-Upload Event Listener
+        function handleFileSelect(e) {
+            const file = e.target.files[0];
+            if (!file) return;
+
+            const reader = new FileReader();
+            reader.onload = function(evt) {
+                currentFileArrayBuffer = evt.target.result;
+                loadPdfData(currentFileArrayBuffer);
+            };
+            reader.readAsArrayBuffer(file);
+        }
+
+        document.getElementById('pdf-file-input').addEventListener('change', handleFileSelect);
+        document.getElementById('pdf-file-input-replace').addEventListener('change', handleFileSelect);
+
+        async function loadPdfData(arrayBuffer) {
+            const loadingTask = pdfjsLib.getDocument({ data: arrayBuffer });
+            pdfDoc = await loadingTask.promise;
+            document.getElementById('page-count').textContent = pdfDoc.numPages;
+            pageNum = 1;
+            userActions = {};
+            
+            document.getElementById('upload-view').style.display = 'none';
+            document.getElementById('editor-view').style.display = 'block';
+            renderPage(pageNum);
+        }
+
+        async function renderPage(num) {
+            pageRendering = true;
+            const page = await pdfDoc.getPage(num);
+            const viewport = page.getViewport({ scale: scale });
+            canvas.height = viewport.height;
+            canvas.width = viewport.width;
+
+            const renderContext = {
+                canvasContext: ctx,
+                viewport: viewport
+            };
+            
+            await page.render(renderContext).promise;
+            pageRendering = false;
+            
+            if (pageNumPending !== null) {
+                renderPage(pageNumPending);
+                pageNumPending = null;
+            }
+
+            document.getElementById('page-num').textContent = num;
+            drawUserOverlays(num);
+        }
+
+        function queueRenderPage(num) {
+            if (pageRendering) {
+                pageNumPending = num;
+            } else {
+                renderPage(num);
+            }
+        }
+
+        document.getElementById('prev-page').addEventListener('click', () => {
+            if (pageNum <= 1) return;
+            pageNum--;
+            queueRenderPage(pageNum);
+        });
+
+        document.getElementById('next-page').addEventListener('click', () => {
+            if (pageNum >= pdfDoc.numPages) return;
+            pageNum++;
+            queueRenderPage(pageNum);
+        });
+
+        // Interaktions-Modus (Text vs Highlight)
+        let activeTool = 'text';
+        document.querySelectorAll('.tool-btn[data-tool]').forEach(btn => {
+            btn.addEventListener('click', (e) => {
+                document.querySelectorAll('.tool-btn[data-tool]').forEach(b => b.classList.remove('active'));
+                e.target.classList.add('active');
+                activeTool = e.target.getAttribute('data-tool');
+            });
+        });
+
+        // Auf Canvas klicken, um Stempel/Text/Highlight zu setzen
+        canvas.addEventListener('click', (e) => {
+            const rect = canvas.getBoundingClientRect();
+            const x = e.clientX - rect.left;
+            const y = e.clientY - rect.top;
+
+            if (!userActions[pageNum]) userActions[pageNum] = [];
+
+            if (activeTool === 'text') {
+                const textVal = document.getElementById('custom-text-input').value;
+                const fontSize = parseInt(document.getElementById('font-size-input').value) || 16;
+                userActions[pageNum].push({ type: 'text', x, y, text: textVal, size: fontSize });
+            } else if (activeTool === 'highlight') {
+                userActions[pageNum].push({ type: 'highlight', x, y, w: 120, h: 24 });
+            }
+
+            renderPage(pageNum);
+        });
+
+        function drawUserOverlays(num) {
+            if (!userActions[num]) return;
+            userActions[num].forEach(action => {
+                if (action.type === 'text') {
+                    ctx.font = `${action.size}px sans-serif`;
+                    ctx.fillStyle = '#2563eb';
+                    ctx.fillText(action.text, action.x, action.y);
+                } else if (action.type === 'highlight') {
+                    ctx.fillStyle = 'rgba(250, 204, 21, 0.4)';
+                    ctx.fillRect(action.x, action.y, action.w, action.h);
+                    ctx.strokeStyle = '#eab308';
+                    ctx.strokeRect(action.x, action.y, action.w, action.h);
+                }
+            });
+        }
+
+        // PDF modifizieren und herunterladen mit pdf-lib
+        document.getElementById('save-pdf-btn').addEventListener('click', async () => {
+            if (!currentFileArrayBuffer) return;
+
+            const pdfLibDoc = await PDFLib.PDFDocument.load(currentFileArrayBuffer);
+            const pages = pdfLibDoc.getPages();
+
+            for (let pNum in userActions) {
+                const pageIndex = parseInt(pNum) - 1;
+                const page = pages[pageIndex];
+                const { height } = page.getSize();
+                const canvasHeight = canvas.height;
+                const renderScale = canvasHeight / page.getHeight();
+
+                userActions[pNum].forEach(action => {
+                    // Koordinatensystem von Canvas-Pixeln auf PDF-Punkt-Einheiten umrechnen
+                    const pdfX = action.x / scale;
+                    const pdfY = height - (action.y / scale);
+
+                    if (action.type === 'text') {
+                        page.drawText(action.text, {
+                            x: pdfX,
+                            y: pdfY - (action.size / 2),
+                            size: action.size / scale,
+                            color: PDFLib.rgb(0.14, 0.39, 0.92),
+                        });
+                    } else if (action.type === 'highlight') {
+                        page.drawRectangle({
+                            x: pdfX,
+                            y: pdfY - (action.h / scale),
+                            width: action.w / scale,
+                            height: action.h / scale,
+                            color: PDFLib.rgb(0.98, 0.8, 0.1),
+                            opacity: 0.4,
+                        });
+                    }
+                });
+            }
+
+            const modifiedPdfBytes = await pdfLibDoc.save();
+            const blob = new Blob([modifiedPdfBytes], { type: 'application/pdf' });
+            const link = document.createElement('a');
+            link.href = URL.createObjectURL(blob);
+            link.download = 'bearbeitetes-dokument.pdf';
+            link.click();
+        });
+    </script>
+</body>
+</html>
